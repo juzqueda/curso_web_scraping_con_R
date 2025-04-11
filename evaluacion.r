@@ -54,32 +54,115 @@ precios <- contenedor %>%
 
 precios
 
+# precio <- as.numeric(gsub("[^0-9]", "", precios))  
+
+# precio
+
+
+# Se extraén las ubicaciones
+
+ubicacion <- contenedor |>
+  html_elements(".item-address") |>
+  html_text()
+
+ubicacion
+
+
+# Se extra el tipo de alquiler ofrecido
+
+tipo <- contenedor |>
+  html_elements(".item-amenities.item-amenities-with-icons") |>
+  html_elements(".h-type") |>
+  html_text()
+
+tipo
+
+
+# Se extraén los tamaños de los alquileres en metros cuadrados
+
+# area <- contenedor |>
+#   html_elements(".item-amenities.item-amenities-with-icons") |>
+#   html_elements(".h-area") |>
+#   html_text()
+
+# area <- as.numeric(gsub("[^0-9]", "", area))  
+
+# area
+
+area <- contenedor |>
+  html_elements(".item-amenities.item-amenities-with-icons") 
+
+area_num <- sapply(area, function(cont) {
+  element <- cont %>% html_element(".h-area")
+  
+  if (length(element) > 0) {
+    # Se extrae el texto
+    text <- html_text(element)
+    num <- as.numeric(gsub("[^0-9]", "", text)) # Se elimina caracteres no numéricos
+    ifelse(is.na(num), 0, num) # Para manejar los posibles faltantes NA
+  } else {
+    0
+  }
+})
+
+area_num
+
+# conviene pasar el vector a tipo caracter para poder agregar el mensaje no informado en los casos que se convirtieron a cero
+
+area_num <- ifelse(area_num == 0, "No informado", as.character(area_num))
+
+area_num
+
+# Se evalua si el alquiler tiene dormitorios
+
+dormitorio <- contenedor |>
+  html_elements(".item-amenities.item-amenities-with-icons")
+
+dormitorio
 
 
 
-#######
-
-sub_url <- contenedor %>%
-  html_nodes("h2.item-title a") %>%  # Selecciona los elementos <a> dentro de <h2 class="item-title">
-  html_attr("href") 
-
-sub_url
-
-class(sub_url)
-
-# convertir urls en vector
-
-urls_vector <- unlist(sub_url)
-
-sub_url[1]
+resultados <- sapply(dormitorio, function(contenedor) {elemento <- contenedor |>
+    html_element(".h-beds")
+    ifelse(length(elemento) > 0, "sí", "no")})
+  
+resultados  
 
 
-# Se guardan los número de habitaciones
 
-habitaciones <- contenedor %>%
-  html_nodes(".item-amenities.item-amenities-with-icons")
+### Se extrae el número de dormitorios por alquiler ofrecido
 
-habitaciones_num <- habitaciones %>%
-  html_nodes(".h-beds")
 
-####
+num_dormitorios <- sapply(dormitorio, function(contenedor) {
+  elemento <- contenedor %>% html_element(".h-beds")
+  
+  if (length(elemento) > 0) {
+    texto <- html_text(elemento)
+    numero <- as.numeric(gsub("[^0-9]", "", texto)) # 
+    ifelse(is.na(numero), 0, numero) 
+  } else {
+    0
+  }
+})
+
+num_dormitorios
+
+
+# Se construye una tabla "dataframe" con los datos extraidos 
+
+
+
+alq_leona <- data.frame(
+  ofrecimientos = nombre_alq,
+  tipo = tipo,
+  dormitorios = num_dormitorios,
+  area = area_num,
+  ubicacion = ubicacion,
+  precio = precios,
+  url = sub_url_2
+)
+
+# Ver las primeras filas de la tabla
+head(alq_leona)
+
+
